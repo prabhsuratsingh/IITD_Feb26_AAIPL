@@ -127,12 +127,12 @@ prompts:
         "difficulty": "basic",
         "domain": "syllogisms"
       }},
-      {
+      {{
         "question": "Another question from a different domain?",
         "answer": "Detailed answer with step-by-step deduction...",
         "difficulty": "intermediate",
         "domain": "family_tree"
-      }
+      }}
     ]
     
     Remember: Output ONLY the JSON array. No markdown. No explanations. Just the JSON.
@@ -182,12 +182,12 @@ prompts:
     
     Example:
     [
-      {
+      {{
         "question": "Complex multi-step problem requiring systematic analysis?",
         "reasoning": "Step 1: First, let me identify what we know...\\nStep 2: Now I'll test the first possibility. If we assume X, then...\\nStep 3: This leads to a contradiction because...\\nStep 4: So X must be false. Trying the opposite...\\nStep 5: This works! Let me verify by checking all constraints...\\nStep 6: Checking constraint 1: ✓, constraint 2: ✓...",
         "answer": "Final answer with summary: The solution is [answer] because [key insight].",
         "domain": "syllogisms"
-      }
+      }}
     ]
     
     Output ONLY the JSON array now.
@@ -224,16 +224,16 @@ prompts:
     - Series: Tests pattern recognition across multiple dimensions
     
     YOU MUST RETURN VALID JSON WITH THIS EXACT SCHEMA:
-    {
+    {{
       "question": "Exact question text",
       "answer": "Exact answer text", 
       "rating": 8
-    }
+    }}
     
     OR FOR MULTIPLE PAIRS:
     [
-      {"question": "Q1", "answer": "A1", "rating": 8},
-      {"question": "Q2", "answer": "A2", "rating": 9}
+      {{"question": "Q1", "answer": "A1", "rating": 8}},
+      {{"question": "Q2", "answer": "A2", "rating": 9}}
     ]
     
     *** RETURN ONLY JSON - NO EXPLANATION OR MARKDOWN ***
