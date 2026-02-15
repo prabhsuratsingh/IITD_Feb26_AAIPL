@@ -3,7 +3,7 @@ import time
 import os
 
 os.environ["HF_HUB_CACHE"] = "/root/.cache/huggingface"
-os.environ["HF_TOKEN"] = "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"
+
 
 import torch
 from typing import Optional, List

@@ -3,7 +3,7 @@ import os
 import time
 
 os.environ["HF_HUB_CACHE"] = "/root/.cache/huggingface"
-os.environ["HF_TOKEN"] = "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"
+
 
 from typing import Optional, Union, List
 from transformers import AutoModelForCausalLM, AutoTokenizer
