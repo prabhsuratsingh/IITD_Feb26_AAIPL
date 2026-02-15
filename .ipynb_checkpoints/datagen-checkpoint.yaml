@@ -30,7 +30,7 @@ ingest:
 
 # LLM generation parameters
 generation:
-  temperature: 0.3       # Lower for more reliable JSON formatting
+  temperature: 0.1       # Lower for more reliable JSON formatting
   top_p: 0.9
   
   # Document processing strategy
@@ -47,7 +47,7 @@ generation:
   
   # Model parameters
   max_tokens: 4096
-  batch_size: 16
+  batch_size: 128
   
   # Quality settings
   enable_deduplication: true
