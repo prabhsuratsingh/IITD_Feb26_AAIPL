@@ -63,6 +63,6 @@ fi
 git remote set-url origin "$REMOTE_URL" 2>/dev/null || git remote add origin "$REMOTE_URL"
 
 echo "Pushing code to GitHub..."
-git push -u origin main
+git push -u origin master
 
 echo "Done! Repo pushed to: $REMOTE_URL"
