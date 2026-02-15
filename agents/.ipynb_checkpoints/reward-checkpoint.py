@@ -183,26 +183,49 @@ def compute_q_reward(
     return reward
 
 #TRL version reward function for A-Agent
-def a_agent_reward_fn(samples, model=None, tokenizer=None, **kwargs):
-    rewards = []
-    prompts = kwargs.get("prompts")
+# def a_agent_reward_fn(samples, model=None, tokenizer=None, **kwargs):
+#     rewards = []
+#     prompts = kwargs.get("prompts")
 
-    for output, prompt in zip(samples, prompts):
+#     for output, prompt in zip(samples, prompts):
+#         mcq = parse_mcq(prompt)
+
+#         if mcq is None:
+#             # rewards.append(-5.0) -> not needed, only to be done on q-agent side
+#             continue
+
+#         correct = mcq["answer"]
+#         predicted = output.strip()
+
+#         if predicted != correct:
+#             rewards.append(-2.0)
+#         else:
+#             rewards.append(1.0)
+
+#     return rewards
+
+def a_agent_reward_fn(prompts, completions, **kwargs):
+
+    rewards = []
+
+    for prompt, output in zip(prompts, completions):
         mcq = parse_mcq(prompt)
 
         if mcq is None:
-            # rewards.append(-5.0) -> not needed, only to be done on q-agent side
+            # rewards.append(-5.0)
             continue
 
         correct = mcq["answer"]
-        predicted = output.strip()
+        pred = output.strip()
 
-        if predicted != correct:
-            rewards.append(-2.0)
-        else:
+        if pred == correct:
             rewards.append(1.0)
+        else:
+            rewards.append(-2.0)
 
     return rewards
+
+
 
 #TRL version reward function for Q-Agent
 def build_q_reward_fn(a_agent, baseline_agent=None):

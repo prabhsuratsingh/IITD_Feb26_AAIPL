@@ -2,19 +2,49 @@
 import os
 import time
 
+#os.environ["HF_HOME"] = "/workspace/AAIPL/hf_models"
 os.environ["HF_HUB_CACHE"] = "/root/.cache/huggingface"
 
 
 from typing import Optional, Union, List
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from .reward import build_q_reward_fn
+# from .reward import build_q_reward_fn
 from trl import GRPOTrainer, GRPOConfig
-from .answer_model import AAgent
+# from .answer_model import AAgent
+
+import json
+
+def load_q_sft(path):
+    with open(path, "r") as f:
+        data = json.load(f)
+
+    dataset = []
+
+    for item in data:
+        instruction = (
+            f"Generate a hard MCQ question on the topic: {item['topic']}. "
+            "Return the result in valid JSON with fields topic, question, choices, answer, explanation."
+        )
+
+        response = json.dumps(item, indent=2)
+
+        text = (
+            "<|start_header_id|>user<|end_header_id|>\n\n"
+            + instruction
+            + "\n\n<|start_header_id|>assistant<|end_header_id|>\n\n"
+            + response
+        )
+
+        dataset.append({"text": text})
+
+    return dataset
+
 
 class QAgent(object):
     def __init__(self, **kwargs):
         #model_name = "Qwen/Qwen3-4B"
         model_name = "Qwen/Qwen2.5-14B-Instruct"
+        #model_name = "ViratChauhan/qagent-sft-checkpoint16"
         #model_name = "google/gemma-3-12b-it"
         #model_name = "unsloth/gpt-oss-20b-BF16"
 
@@ -106,7 +136,7 @@ class QAgent(object):
 
 if __name__ == "__main__":
     # Single example generation
-    q_agent = QAgent()
+    # q_agent = QAgent()
     prompt = f"""
     Question: Generate a hard MCQ based question as well as their 4 choices and its answers on the topic, Number Series.
     Return your response as a valid JSON object with this exact structure:
@@ -125,40 +155,92 @@ if __name__ == "__main__":
         }}
     """
 
-    a_agent = AAgent()
+    # a_agent = AAgent()
 
     #freeze baseline (optional tho)
     #need it diff from a agent
-    baseline_agent = AAgent()
-    baseline_agent.model.eval()
-    for p in baseline_agent.model.parameters():
-        p.requires_grad = False
+    # baseline_agent = AAgent()
+    # baseline_agent.model.eval()
+    # for p in baseline_agent.model.parameters():
+    #     p.requires_grad = False
 
-    q_reward_func = build_q_reward_fn(
-        a_agent=a_agent,
-        #baeline is optional
-        baseline_agent=baseline_agent 
-    )
+    # q_reward_func = build_q_reward_fn(
+    #     a_agent=a_agent,
+    #     #baeline is optional
+    #     baseline_agent=baseline_agent 
+    # )
 
-    config = GRPOConfig(
-        output_dir="./qagent-grpo",
-        group_size=4,
-        learning_rate=5e-6,
-        kl_coef=0.05,
-    )
+    # config = GRPOConfig(
+    #     output_dir="./qagent-grpo",
+    #     group_size=4,
+    #     learning_rate=5e-6,
+    #     kl_coef=0.05,
+    # )
 
-    trainer = GRPOTrainer(
-        model=q_agent.model,
-        tokenizer=q_agent.tokenizer,
-        args=config,
-        reward_fn=q_reward_fn,
-    )
+    # trainer = GRPOTrainer(
+    #     model=q_agent.model,
+    #     tokenizer=q_agent.tokenizer,
+    #     args=config,
+    #     reward_fn=q_reward_fn,
+    # )
 
-    prompts = [
-        "Generate a hard MCQ question in JSON format."
-    ] * 1000
+    # prompts = [
+    #     "Generate a hard MCQ question in JSON format."
+    # ] * 1000
     
-    trainer.train(prompts=prompts)
+    # trainer.train(prompts=prompts)
+
+    from trl import SFTTrainer, SFTConfig
+    from transformers import DataCollatorForSeq2Seq
+    from datasets import Dataset
+
+    
+    q_agent = QAgent()
+    
+    tokenizer = q_agent.tokenizer
+    model = q_agent.model
+    
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.pad_token_id = tokenizer.eos_token_id
+    
+    mcq_files = [
+        "data_part_1.json",
+        "data_part_2.json",
+        "data_part_3.json",
+        "data_part_4.json",
+        "data_part_5.json",
+    ]
+    
+    for i, file in enumerate(mcq_files, 1):
+        print(f"\n=== Q-Agent SFT on {file} ({i}/5) ===")
+    
+        # dataset = load_q_sft(file)
+        dataset = Dataset.from_list(load_q_sft(file))
+    
+        trainer = SFTTrainer(
+            model=model,
+            train_dataset=dataset,
+            processing_class=tokenizer,
+            # data_collator=DataCollatorForSeq2Seq(tokenizer=tokenizer, padding=True),
+            args=SFTConfig(
+                max_length=2048,
+                dataset_text_field="text",
+                per_device_train_batch_size=32,
+                gradient_accumulation_steps=4,
+                num_train_epochs=2,
+                learning_rate=2e-5,
+                logging_steps=10,
+                output_dir="./qagent-sft",
+                bf16=True,
+                report_to="none",
+                packing=False,
+            ),
+        )
+    
+        trainer.train()
+    
+        trainer.save_model(f".qagent-sft/qagent-sft-stage{i}")
     
     # ------- DEFAULT CODE BELOW FOR TESTING -----------
     #Default test code

@@ -27,7 +27,8 @@ class QuestioningAgent(object):
             "{{\n"
             '  "topic": "{}",\n'
             '  "question": "{}",\n'
-            '  "choices": ["A) {}", "B) {}", "C) {}", "D) {}"],\n'
+            #'  "choices": ["A) {}", "B) {}", "C) {}", "D) {}"],\n'
+            '  "choices": ["{}", "{}", "{}", "{}"],\n'
             '  "answer": "{}",\n'
             '  "explanation": "{}"\n'
             "}}"
@@ -59,10 +60,33 @@ class QuestioningAgent(object):
         if wadvsys:
             # TODO: Manipulate this SYS prompt for better results
             sys_prompt = """
-            You are an **expert-level examiner** with deep expertise in designing **highly challenging and conceptually rigorous multiple-choice questions (MCQs)** for the **Quantitative Aptitude and Analytical Reasoning** sections of top-tier competitive exams.
-            Think step by step to generate the question and solve the same, but only output the final answer. Do not show your thinking process.
-            **Please DO NOT reveal the solution steps or any intermediate reasoning.**
-            """
+            You are an expert MCQ examiner specializing in Quantitative Aptitude and Analytical Reasoning for top-tier competitive exams.
+
+        Your task: Generate EXTREMELY DIFFICULT multiple-choice questions in strict JSON format.
+        
+        CRITICAL OUTPUT RULES:
+        1. Return ONLY valid JSON - no markdown, no code blocks, no extra text
+        2. Match this exact schema:
+           {
+             "topic": "<Topic of Question>",
+             "question": "<full question text>",
+             "choices": ["A) <choice A text>", "B) <choice B text>", "C) <choice C text>", "D) <choice D text>"],
+             "answer": "<correct choice letter only: A, B, C, or D>",
+             "explanation": "<brief explanation within 100 words>"
+           }
+        
+        3. The "answer" field must contain ONLY one letter (A, B, C, or D) - nothing else
+        4. The "choices" array must have exactly 4 strings, each starting with "A) ", "B) ", "C) ", "D) ". Don't repeat options.
+        5. All JSON must be properly formatted with correct quotes, commas, and brackets
+        
+        BEFORE OUTPUTTING - VERIFY:
+        ✓ Is this valid, parseable JSON?
+        ✓ Does "answer" contain only a single letter?
+        ✓ Are there exactly 4 choices in the correct format?
+        ✓ Are all required keys present?
+        
+        Think step-by-step to create the question internally, but output ONLY the final JSON object.
+        """
         else:
             sys_prompt = "You are an examiner tasked with creating extremely difficult multiple-choice questions"
         tmpl = (
@@ -395,7 +419,7 @@ if __name__ == "__main__":
                 '  "explanation": "..."\n'
                 "}}"
             )
-            q = agent.agent.generate_response(
+            q, _, _ = agent.agent.generate_response(
                 prompt.format(q),
                 "You are an expert JSON extractor.",
                 max_new_tokens=1024,
